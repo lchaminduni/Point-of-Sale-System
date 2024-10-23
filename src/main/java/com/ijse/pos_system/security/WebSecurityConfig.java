@@ -62,7 +62,13 @@ public class WebSecurityConfig {
         .authorizeHttpRequests(
             auth -> auth
             .requestMatchers("/auth/**","/users").permitAll()
-            .requestMatchers("/items/**").permitAll()
+            //.requestMatchers("/orders/**").permitAll()
+            .requestMatchers("/orders/**", "/items/**", "/stocks/**", "/categories/**").authenticated()
+            //.requestMatchers("/orders/add").authenticated()
+            //.requestMatchers("/items/**").authenticated()
+            //.requestMatchers("/stocks/**").authenticated()
+            //.requestMatchers("/categories/**").authenticated()
+            
             .requestMatchers(
                     "/swagger-ui/**",
                     "/v3/api-docs/**",
@@ -78,4 +84,5 @@ public class WebSecurityConfig {
 
         return http.build();
     }
+
 }

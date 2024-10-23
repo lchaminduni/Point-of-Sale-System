@@ -68,4 +68,33 @@ public class StockServiceImpl implements StockService{
             throw new IllegalArgumentException("Stock not found with ID: " + id);
         }
     }
+
+    //new adding
+/* 
+    @Override
+    public void updateStockAfterOrder(Long itemId, Integer quantity) {
+        Stock stock = stockRepository.findByItemId(itemId)
+                .orElseThrow(() -> new IllegalArgumentException("Item not found in stock"));
+
+        // Decrease stock quantity
+        
+    
+        // Decrease stock quantity
+        stock.setQuantity(stock.getQuantity() - quantity);
+
+        stockRepository.save(stock);
+    }
+
+    @Override
+    public void updateStockAfterDelete(Long itemId, Integer quantity) {
+        Stock stock = stockRepository.findByItemId(itemId)
+                .orElseThrow(() -> new IllegalArgumentException("Item not found in stock"));
+
+        // Increase stock quantity
+        stock.setQuantity(stock.getQuantity() + quantity);
+
+        stockRepository.save(stock);
+    }
+*/
+    
 }

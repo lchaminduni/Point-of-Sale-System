@@ -10,5 +10,10 @@ public interface StockService {
     Stock updateStock(Long id,StockDto stockDto);
     Stock getStockById(Long id);
     void deleteStock(Long id);
-    List<Stock> getAllStock(); 
+    List<Stock> getAllStock();
+    //new adding
+    //void updateStockAfterOrder(Long itemId,Integer quantity);
+    //void updateStockAfterDelete(Long itemId,Integer quantity); 
+    //Stock findStockByItemId(Long itemId);
+
 } 
