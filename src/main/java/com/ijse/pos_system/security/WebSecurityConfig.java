@@ -63,7 +63,7 @@ public class WebSecurityConfig {
             auth -> auth
             .requestMatchers("/auth/**","/users").permitAll()
             
-            .requestMatchers("/orders/**", "/items/**", "/stocks/**", "/categories/**").authenticated()
+            .requestMatchers("/orders/**", "/items/**", "/stocks/**", "/categories/**","/invoices/**").authenticated()
             
             .requestMatchers(
                     "/swagger-ui/**",
