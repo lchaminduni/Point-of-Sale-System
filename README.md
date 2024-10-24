@@ -24,4 +24,4 @@ How to Run
 
 ~ Run the project using your preferred IDE or via command line using Maven/Gradle.
 
-~ The APIs will be available at http://localhost:8080/, and you can explore the documentation via Swagger at http://localhost:8080/swagger-ui.html.
+~ The APIs will be available at http://localhost:8080/, and you can explore the documentation via Swagger at    http://localhost:8080/swagger-ui.html.
