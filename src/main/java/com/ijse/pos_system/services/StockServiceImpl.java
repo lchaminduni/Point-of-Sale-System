@@ -39,6 +39,7 @@ public class StockServiceImpl implements StockService{
     @Override
     public Stock saveStock(StockDto stockDto) {
         Stock stock = new Stock();
+        stock.setId(stockDto.getId());
         stock.setQuantity(stockDto.getQuantity());
         
         if (stockDto.getItem_Id() != null) {
@@ -69,32 +70,9 @@ public class StockServiceImpl implements StockService{
         }
     }
 
-    //new adding
-/* 
     @Override
-    public void updateStockAfterOrder(Long itemId, Integer quantity) {
-        Stock stock = stockRepository.findByItemId(itemId)
-                .orElseThrow(() -> new IllegalArgumentException("Item not found in stock"));
-
-        // Decrease stock quantity
-        
-    
-        // Decrease stock quantity
-        stock.setQuantity(stock.getQuantity() - quantity);
-
-        stockRepository.save(stock);
+    public Stock getStockByItemId(Long itemId) {
+        return stockRepository.findByItemId(itemId);
     }
 
-    @Override
-    public void updateStockAfterDelete(Long itemId, Integer quantity) {
-        Stock stock = stockRepository.findByItemId(itemId)
-                .orElseThrow(() -> new IllegalArgumentException("Item not found in stock"));
-
-        // Increase stock quantity
-        stock.setQuantity(stock.getQuantity() + quantity);
-
-        stockRepository.save(stock);
-    }
-*/
-    
 }

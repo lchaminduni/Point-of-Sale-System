@@ -10,6 +10,5 @@ import lombok.Setter;
 public class StockDto {
     private Long id;
     private Integer quantity;
-    private Long item_Id;  // This will store the ID of the associated Item
-
+    private Long item_Id; 
 }

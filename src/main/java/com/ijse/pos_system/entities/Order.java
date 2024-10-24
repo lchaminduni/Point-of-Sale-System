@@ -46,6 +46,4 @@ public class Order {
 
     )
     private List<Item> orderedItems;
-
-    
 }
