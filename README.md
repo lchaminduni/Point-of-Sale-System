@@ -15,3 +15,13 @@ Technologies Used
 ~ Swagger for API documentation
 
 ~ JUnit for unit testing
+
+How to Run
+
+~ Clone the repository.
+
+~ Configure the application.properties file with your MySQL credentials.
+
+~ Run the project using your preferred IDE or via command line using Maven/Gradle.
+
+~ The APIs will be available at http://localhost:8080/, and you can explore the documentation via Swagger at http://localhost:8080/swagger-ui.html.
