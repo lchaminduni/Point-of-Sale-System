@@ -11,9 +11,11 @@ import com.pos_system.dto.SaleItemResponseDto;
 import com.pos_system.entities.Product;
 import com.pos_system.entities.Sale;
 import com.pos_system.entities.SaleItem;
+import com.pos_system.models.ReferenceType;
 import com.pos_system.repositories.ProductRepository;
 import com.pos_system.repositories.SaleItemRepository;
 import com.pos_system.repositories.SaleRepository;
+import com.pos_system.services.InventoryService;
 import com.pos_system.services.SaleItemService;
 
 @Service
@@ -27,25 +29,42 @@ public class SaleItemServiceImpl implements SaleItemService{
     @Autowired
     private SaleRepository saleRepository;
 
+    @Autowired
+    private InventoryService inventoryService;
+
+
     @Override
     public SaleItemResponseDto addSaleItem(SaleItemRequestDto dto) {
         Sale sale = saleRepository.findById(dto.getSaleId())
-                .orElseThrow(() -> new RuntimeException("Sale not found"));
+            .orElseThrow(() -> new RuntimeException("Sale not found"));
 
         Product product = productRepository.findById(dto.getProductId())
-                .orElseThrow(() -> new RuntimeException("Product not found"));
+            .orElseThrow(() -> new RuntimeException("Product not found"));
 
+        // ✅ 1. Reduce stock before saving the sale item
+        inventoryService.removeStock(
+            product.getId(),
+            dto.getQuantity(),
+            ReferenceType.SALE,     // You should define this enum value
+            sale.getId(),
+            "Sale item created for sale #" + sale.getId(),
+            null
+            //sale.getCreatedBy()     // Or pass current authenticated user if available
+        );
+
+    // ✅ 2. Save sale item
         SaleItem saleItem = SaleItem.builder()
-                .sale(sale)
-                .product(product)
-                .quantity(dto.getQuantity())
-                .unitPrice(dto.getUnitPrice())
-                .totalPrice(dto.getTotalPrice())
-                .build();
+            .sale(sale)
+            .product(product)
+            .quantity(dto.getQuantity())
+            .unitPrice(dto.getUnitPrice())
+            .totalPrice(dto.getTotalPrice())
+            .build();
 
         SaleItem saved = saleItemRepository.save(saleItem);
         return mapToResponseDTO(saved);
-    }
+     }
+
 
     @Override
     public SaleItemResponseDto updateSaleItem(Integer id, SaleItemRequestDto dto) {
@@ -68,8 +87,21 @@ public class SaleItemServiceImpl implements SaleItemService{
     public void deleteSaleItem(Integer id) {
         SaleItem saleItem = saleItemRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Sale item not found"));
+    
+        // ✅ Add back stock when sale item is deleted
+        inventoryService.addStock(
+                saleItem.getProduct().getId(),
+                saleItem.getQuantity(),
+                ReferenceType.SALE,
+                saleItem.getSale().getId(),
+                "Sale item deleted for sale #" + saleItem.getSale().getId(),
+                null
+                //saleItem.getSale().getCreatedBy()
+        );
+    
         saleItemRepository.delete(saleItem);
     }
+    
 
     @Override
     public SaleItemResponseDto getSaleItemById(Integer id) {

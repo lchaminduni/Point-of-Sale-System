@@ -4,6 +4,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -15,11 +16,17 @@ import io.jsonwebtoken.Claims;
 
 @Service
 public class JwtService {
-    private static final String SECRET_KEY = "39ANve9ID+9QxgifWonj0LPWGUlVaximr6p0qBt35vEusPo/8wQeSFP7bKhh7yx1"; // change to a secure key
+    private static final String SECRET_KEY = "39ANve9ID+9QxgifWonj0LPWGUlVaximr6p0qBt35vEusPo/8wQeSFP7bKhh7yx1";
     private static final long EXPIRATION_TIME = 86400000; // 1 day in ms
 
     public String generateToken(UserDetails userDetails) {
         Map<String, Object> claims = new HashMap<>();
+        // Extract role from userDetails
+        String role = userDetails.getAuthorities().stream()
+                .findFirst()
+                .map(GrantedAuthority::getAuthority)
+                .orElse("ROLE_CASHIER");
+        claims.put("role", role);
         return createToken(claims, userDetails.getUsername());
     }
 

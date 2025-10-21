@@ -50,4 +50,10 @@ public interface SaleRepository extends JpaRepository<Sale,Integer>{
        "GROUP BY FUNCTION('MONTH', s.saleDate)")
     List<Object[]> getMonthlySalesData(LocalDateTime start, LocalDateTime end);
 
+    @Query("SELECT p.category.name AS category, SUM(si.quantity) AS totalSales " +
+       "FROM SaleItem si JOIN si.product p " +
+       "GROUP BY p.category.name")
+    List<Object[]> getSalesByCategory();
+
+
 }

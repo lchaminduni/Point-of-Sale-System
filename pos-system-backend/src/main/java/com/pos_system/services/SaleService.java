@@ -42,4 +42,10 @@ public interface SaleService {
     List<Object[]> getWeeklySalesData(LocalDateTime startDate, LocalDateTime endDate);
 
     List<Object[]> getMonthlySalesData(LocalDateTime startDate, LocalDateTime endDate);
+
+    List<Sale> getAllSales();
+
+    byte[] generateSaleReceiptPdf(Integer saleId);
+
+    
 }

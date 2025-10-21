@@ -3,14 +3,17 @@ package com.pos_system.controllers;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,16 +23,30 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import com.pos_system.dto.CreateSaleRequest;
 import com.pos_system.entities.Sale;
+import com.pos_system.repositories.SaleRepository;
 import com.pos_system.services.SaleService;
 
 import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/sales")
-@CrossOrigin(origins = "*")
 public class SaleController {
     @Autowired
     private SaleService saleService;
+
+    @Autowired
+    private SaleRepository saleRepository;
+
+    @GetMapping
+    @PreAuthorize("hasRole('CASHIER') or hasRole('ADMIN')")
+    public ResponseEntity<?> getAllSales() {
+        try {
+            return ResponseEntity.ok(saleService.getAllSales());
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(Map.of("message", e.getMessage()));
+        }
+    }
+
 
     @PostMapping
     @PreAuthorize("hasRole('CASHIER') or hasRole('ADMIN')")
@@ -84,14 +101,41 @@ public class SaleController {
     }
 
     @GetMapping("/report/cashier-performance")
-public ResponseEntity<?> getCashierPerformance(
+    public ResponseEntity<?> getCashierPerformance(
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start,
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end
-) {
-    LocalDateTime startDateTime = start.atStartOfDay();
-    LocalDateTime endDateTime = end.atTime(LocalTime.MAX); // 23:59:59.999999
+    ) {
+        LocalDateTime startDateTime = start.atStartOfDay();
+        LocalDateTime endDateTime = end.atTime(LocalTime.MAX); // 23:59:59.999999
 
-    return ResponseEntity.ok(saleService.getCashierPerformance(startDateTime, endDateTime));
-}
+        return ResponseEntity.ok(saleService.getCashierPerformance(startDateTime, endDateTime));
+    }
 
+    @GetMapping("/{saleId}/receipt")
+    @PreAuthorize("hasRole('CASHIER') or hasRole('ADMIN')")
+    public ResponseEntity<?> generateSaleReceipt(@PathVariable Integer saleId) {
+        try {
+            byte[] pdfBytes = saleService.generateSaleReceiptPdf(saleId);
+            return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=sale-receipt-" + saleId + ".pdf")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdfBytes);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/category-summary")
+    public List<Map<String, Object>> getSalesByCategory() {
+        List<Object[]> results = saleRepository.getSalesByCategory();
+
+        List<Map<String, Object>> response = new ArrayList<>();
+        for (Object[] row : results) {
+            Map<String, Object> map = new HashMap<>();
+            map.put("category", row[0]);
+            map.put("sales", ((Number) row[1]).intValue());
+            response.add(map);
+        }
+        return response;
+    }
 }

@@ -9,6 +9,4 @@ public class PosSystemApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(PosSystemApplication.class, args);
 	}
-
 }
- 

@@ -3,7 +3,6 @@ package com.pos_system.entities;
 import java.math.BigDecimal;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import jakarta.persistence.Column;
@@ -58,3 +57,4 @@ public class SaleItem {
         this.totalPrice = this.unitPrice.multiply(BigDecimal.valueOf(this.quantity));
     }
 }
+      

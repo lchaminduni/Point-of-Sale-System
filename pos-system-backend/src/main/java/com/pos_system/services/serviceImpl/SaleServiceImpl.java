@@ -1,5 +1,6 @@
 package com.pos_system.services.serviceImpl;
 
+import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -13,6 +14,13 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.itextpdf.text.Document;
+import com.itextpdf.text.Font;
+import com.itextpdf.text.FontFactory;
+import com.itextpdf.text.PageSize;
+import com.itextpdf.text.Paragraph;
+import com.itextpdf.text.pdf.PdfPTable;
+import com.itextpdf.text.pdf.PdfWriter;
 import com.pos_system.dto.CreateSaleRequest;
 import com.pos_system.entities.PaymentStatus;
 import com.pos_system.entities.Product;
@@ -20,12 +28,14 @@ import com.pos_system.entities.Sale;
 import com.pos_system.entities.SaleItem;
 import com.pos_system.entities.User;
 import com.pos_system.repositories.ProductRepository;
+import com.pos_system.repositories.SaleItemRepository;
 import com.pos_system.repositories.SaleRepository;
 import com.pos_system.repositories.UserRepository;
 import com.pos_system.services.ProductService;
 import com.pos_system.services.SaleService;
 
 import lombok.RequiredArgsConstructor;
+
 
 @Service
 @Transactional
@@ -35,6 +45,7 @@ public class SaleServiceImpl implements SaleService{
     private final ProductRepository productRepository;
     private final ProductService productService;
     private final UserRepository userRepository;
+    private final SaleItemRepository saleItemRepository;
 
     @Override
     public Sale createSale(CreateSaleRequest request) {
@@ -82,15 +93,10 @@ public class SaleServiceImpl implements SaleService{
             productService.reduceStock(product.getId(), itemRequest.getQuantity());
         }
 
-        //Tax (8.5%)
-        BigDecimal taxRate = new BigDecimal("0.085");
-        BigDecimal taxAmount = subtotal.multiply(taxRate);
-
         // Calculate total
-        BigDecimal totalAmount = subtotal.add(taxAmount).subtract(sale.getDiscountAmount());
+        BigDecimal totalAmount = subtotal.subtract(sale.getDiscountAmount());
 
         sale.setSubtotal(subtotal);
-        sale.setTaxAmount(taxAmount);
         sale.setTotalAmount(totalAmount);
         sale.setSaleDate(LocalDateTime.now());
         sale.setPaymentStatus(PaymentStatus.COMPLETED);
@@ -102,6 +108,12 @@ public class SaleServiceImpl implements SaleService{
     public Optional<Sale> findById(Integer id) {
         return saleRepository.findById(id);
     }
+
+    @Override
+public List<Sale> getAllSales() {
+    return saleRepository.findAll();
+}
+
 
     @Override
     public Optional<Sale> findBySaleNumber(String saleNumber) {
@@ -199,4 +211,70 @@ public class SaleServiceImpl implements SaleService{
 
         return saleNumber;
     }
+
+    @Override
+    public byte[] generateSaleReceiptPdf(Integer saleId) {
+        Sale sale = saleRepository.findById(saleId)
+            .orElseThrow(() -> new RuntimeException("Sale not found"));
+    
+        // ✅ Fetch all sale items from DB to get updated items
+        List<SaleItem> allItems = saleItemRepository.findBySaleId(saleId);
+    
+        BigDecimal subtotal = allItems.stream()
+                .map(SaleItem::getTotalPrice)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    
+        BigDecimal totalAmount = subtotal.subtract(
+                sale.getDiscountAmount() != null ? sale.getDiscountAmount() : BigDecimal.ZERO
+        );
+    
+        try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            Document document = new Document(PageSize.A5);
+            PdfWriter.getInstance(document, out);
+            document.open();
+    
+            Font titleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 16);
+            Font textFont = FontFactory.getFont(FontFactory.HELVETICA, 10);
+    
+            document.add(new Paragraph("Blend & Brew", titleFont));
+            document.add(new Paragraph("Sale Number: " + sale.getSaleNumber(), textFont));
+            document.add(new Paragraph("Date: " + sale.getSaleDate(), textFont));
+            document.add(new Paragraph("Cashier: " + sale.getCashier().getFirstName(), textFont));
+            document.add(new Paragraph("Customer: " + sale.getCustomerName(), textFont));
+            document.add(new Paragraph("Payment Method: " + sale.getPaymentMethod(), textFont));
+            document.add(new Paragraph("--------------------------------------------------"));
+    
+            PdfPTable table = new PdfPTable(4);
+            table.setWidthPercentage(100);
+            table.addCell("Product");
+            table.addCell("Qty");
+            table.addCell("Unit");
+            table.addCell("Total");
+    
+            // ✅ Loop through all sale items
+            for (SaleItem item : allItems) {
+                table.addCell(item.getProduct().getName());
+                table.addCell(String.valueOf(item.getQuantity()));
+                table.addCell(item.getUnitPrice().toPlainString());
+                table.addCell(item.getTotalPrice().toPlainString());
+            }
+    
+            document.add(table);
+            document.add(new Paragraph("--------------------------------------------------"));
+            document.add(new Paragraph("Subtotal: Rs. " + subtotal, textFont));
+            document.add(new Paragraph("Discount: Rs. " + (sale.getDiscountAmount() != null ? sale.getDiscountAmount() : 0), textFont));
+            document.add(new Paragraph("TOTAL: Rs. " + totalAmount, titleFont));
+            document.add(new Paragraph("--------------------------------------------------"));
+            document.add(new Paragraph("Thank you for your purchase!", textFont));
+    
+            document.close();
+            return out.toByteArray();
+        } catch (Exception e) {
+            throw new RuntimeException("Error generating sale receipt: " + e.getMessage());
+        }
+    }
+    
+    
+
+    
 }

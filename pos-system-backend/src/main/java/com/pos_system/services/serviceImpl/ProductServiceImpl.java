@@ -26,10 +26,17 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public Product createProduct(ProductDto dto) {
-        if (dto.getBarcode() != null && productRepository.existsByBarcode(dto.getBarcode())) {
+        // Generate barcode automatically if not provided
+        if (dto.getBarcode() == null || dto.getBarcode().isEmpty()) {
+            String generatedBarcode;
+            do {
+                generatedBarcode = generateBarcode();
+            } while (productRepository.existsByBarcode(generatedBarcode));
+            dto.setBarcode(generatedBarcode);
+        } else if (productRepository.existsByBarcode(dto.getBarcode())) {
             throw new RuntimeException("Product with this barcode already exists");
         }
-
+    
         Product product = new Product();
         product.setName(dto.getName());
         product.setDescription(dto.getDescription());
@@ -39,15 +46,26 @@ public class ProductServiceImpl implements ProductService {
         product.setStockQuantity(dto.getStockQuantity());
         product.setMinStockLevel(dto.getMinStockLevel());
         product.setIsActive(dto.getIsActive());
-
+    
         if (dto.getCategoryId() != null) {
             Category category = categoryRepository.findById(dto.getCategoryId())
                     .orElseThrow(() -> new RuntimeException("Category not found"));
             product.setCategory(category);
         }
-
+    
         return productRepository.save(product);
     }
+    
+    // Helper method to generate random 12-digit barcode
+    private String generateBarcode() {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 12; i++) {
+            int digit = (int) (Math.random() * 10);
+            sb.append(digit);
+        }
+        return sb.toString();
+    }
+    
 
     @Override
     public Product updateProduct(Integer id, ProductDto dto) {

@@ -57,6 +57,8 @@ public class Sale {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal subtotal;
 
+    //private String createdBy;
+
     @Column(name = "tax_amount", precision = 10, scale = 2)
     private BigDecimal taxAmount = BigDecimal.ZERO;
 

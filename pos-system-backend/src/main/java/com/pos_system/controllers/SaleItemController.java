@@ -4,9 +4,10 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -19,15 +20,19 @@ import org.springframework.web.bind.annotation.RestController;
 import com.pos_system.dto.SaleItemRequestDto;
 import com.pos_system.dto.SaleItemResponseDto;
 import com.pos_system.services.SaleItemService;
+import com.pos_system.services.SaleService;
 
 import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/sale-items")
-@CrossOrigin(origins = "*")
+//@CrossOrigin(origins = "*")
 public class SaleItemController {
     @Autowired
     private SaleItemService saleItemService;
+
+    @Autowired
+    private SaleService saleService;
 
     @GetMapping("/sale/{saleId}")
     public ResponseEntity<List<SaleItemResponseDto>> getItemsBySale(@PathVariable Integer saleId) {
@@ -73,4 +78,19 @@ public class SaleItemController {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }
     }
+
+    @GetMapping("/sale/{saleId}/receipt")
+    public ResponseEntity<byte[]> generateSaleReceipt(@PathVariable Integer saleId) {
+        try {
+            byte[] pdf = saleService.generateSaleReceiptPdf(saleId);
+            return ResponseEntity.ok()
+                    .header("Content-Disposition", "attachment; filename=sale-" + saleId + "-receipt.pdf")
+                    .contentType(MediaType.APPLICATION_PDF)
+                    .body(pdf);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(null);
+        }
+    }
+    
+
 }
